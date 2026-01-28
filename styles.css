@@ -1,0 +1,104 @@
+.immich-carousel-wrapper {
+	margin: 0.75em 0;
+}
+
+.immich-carousel-header {
+	font-size: 0.85em;
+	color: var(--text-muted);
+	margin-bottom: 0.5em;
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 0.5em;
+}
+
+.immich-carousel-day-link {
+	font-size: 0.85em;
+	color: var(--text-accent);
+	text-decoration: none;
+}
+
+.immich-carousel-day-link:hover {
+	text-decoration: underline;
+}
+
+.immich-carousel {
+	position: relative;
+}
+
+.immich-carousel::before,
+.immich-carousel::after {
+	content: "";
+	position: absolute;
+	top: 0;
+	bottom: 0;
+	width: 14px;
+	pointer-events: none;
+	z-index: 1;
+	opacity: 0;
+	transition: opacity 120ms ease-out;
+}
+
+.immich-carousel::before {
+	left: 0;
+	background: linear-gradient(to right, color-mix(in srgb, var(--background-primary) 65%, transparent), rgba(0, 0, 0, 0));
+}
+
+.immich-carousel::after {
+	right: 0;
+	background: linear-gradient(to left, color-mix(in srgb, var(--background-primary) 65%, transparent), rgba(0, 0, 0, 0));
+}
+
+.immich-carousel.immich-carousel-can-scroll-left::before {
+	opacity: 1;
+}
+
+.immich-carousel.immich-carousel-can-scroll-right::after {
+	opacity: 1;
+}
+
+.immich-carousel-track {
+	display: flex;
+	gap: 0.5em;
+	overflow-x: auto;
+	scroll-snap-type: x mandatory;
+	padding: 0.25em 0;
+}
+
+.immich-carousel-item {
+	flex: 0 0 auto;
+	scroll-snap-align: start;
+}
+
+.immich-carousel-item img {
+	width: var(--immich-carousel-thumb-size, 140px);
+	height: var(--immich-carousel-thumb-size, 140px);
+	object-fit: cover;
+	border-radius: 10px;
+	box-shadow: 0 6px 14px rgba(0, 0, 0, 0.12);
+}
+
+.immich-carousel-item-link {
+	display: inline-flex;
+}
+
+.immich-carousel-item-error {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: var(--immich-carousel-thumb-size, 140px);
+	height: var(--immich-carousel-thumb-size, 140px);
+	background: var(--background-secondary);
+	border-radius: 10px;
+	color: var(--text-muted);
+	font-size: 0.8em;
+	text-align: center;
+	padding: 0.5em;
+}
+
+.immich-carousel-status,
+.immich-carousel-message {
+	margin-top: 0.5em;
+	font-size: 0.85em;
+	color: var(--text-muted);
+}
