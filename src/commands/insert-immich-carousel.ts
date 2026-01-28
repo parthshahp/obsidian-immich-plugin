@@ -1,14 +1,14 @@
-import {Editor, MarkdownView, Notice} from "obsidian";
+import { Editor, MarkdownView, Notice } from "obsidian";
 import ImmichDailyCarouselPlugin from "../main";
-import {parseDateFromTitle} from "../utils/date";
-import {hasImmichCredentials} from "../utils/immich";
+import { parseDateFromTitle } from "../utils/date";
+import { hasImmichCredentials } from "../utils/immich";
 
 const CAROUSEL_BLOCK = "```immich-carousel\n```";
 
 export function insertImmichCarousel(
 	plugin: ImmichDailyCarouselPlugin,
 	editor: Editor,
-	view: MarkdownView
+	view: MarkdownView,
 ) {
 	if (!hasImmichCredentials(plugin.settings)) {
 		new Notice("Set your Immich base URL and API key in settings first.");

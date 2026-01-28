@@ -1,7 +1,7 @@
-import {requestUrl} from "obsidian";
-import {ImmichDailySettings} from "../settings";
-import {normalizeBaseUrl} from "../utils/immich";
-import {ImmichAsset, ImmichSearchResponse} from "./types";
+import { requestUrl } from "obsidian";
+import { ImmichDailySettings } from "../settings";
+import { normalizeBaseUrl } from "../utils/immich";
+import { ImmichAsset, ImmichSearchResponse } from "./types";
 
 interface ImmichSearchRequest {
 	takenAfter: string;
@@ -12,7 +12,11 @@ interface ImmichSearchRequest {
 	order?: "asc" | "desc";
 }
 
-export async function searchAssetsForDate(settings: ImmichDailySettings, startIso: string, endIso: string) {
+export async function searchAssetsForDate(
+	settings: ImmichDailySettings,
+	startIso: string,
+	endIso: string,
+) {
 	const baseUrl = normalizeBaseUrl(settings.baseUrl);
 	const url = `${baseUrl}/api/search/metadata`;
 
@@ -42,7 +46,10 @@ export async function searchAssetsForDate(settings: ImmichDailySettings, startIs
 	return json.assets?.items ?? json.items ?? [];
 }
 
-export async function fetchAssetThumbnail(settings: ImmichDailySettings, assetId: string) {
+export async function fetchAssetThumbnail(
+	settings: ImmichDailySettings,
+	assetId: string,
+) {
 	const baseUrl = normalizeBaseUrl(settings.baseUrl);
 	const url = `${baseUrl}/api/assets/${assetId}/thumbnail?size=${settings.imageSize}`;
 
@@ -52,7 +59,6 @@ export async function fetchAssetThumbnail(settings: ImmichDailySettings, assetId
 		headers: {
 			"x-api-key": settings.apiKey,
 		},
-		responseType: "arraybuffer",
 	});
 
 	const bytes = response.arrayBuffer;
@@ -60,5 +66,9 @@ export async function fetchAssetThumbnail(settings: ImmichDailySettings, assetId
 }
 
 export function isRenderableAsset(asset: ImmichAsset) {
-	return asset.type === "IMAGE" || asset.type === "VIDEO" || asset.type === undefined;
+	return (
+		asset.type === "IMAGE" ||
+		asset.type === "VIDEO" ||
+		asset.type === undefined
+	);
 }

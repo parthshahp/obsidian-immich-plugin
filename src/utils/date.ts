@@ -1,4 +1,4 @@
-import {moment} from "obsidian";
+import { moment } from "obsidian";
 
 const DATE_PATTERNS: RegExp[] = [
 	/(\d{4})-(\d{2})-(\d{2})/,
@@ -17,8 +17,12 @@ export function parseDateFromTitle(title: string, dateFormat: string) {
 	for (const pattern of DATE_PATTERNS) {
 		const match = title.match(pattern);
 		if (match) {
-			const [_, year, month, day] = match;
-			const parsed = moment(`${year}-${month}-${day}`, "YYYY-MM-DD", true);
+			const [, year, month, day] = match;
+			const parsed = moment(
+				`${year}-${month}-${day}`,
+				"YYYY-MM-DD",
+				true,
+			);
 			if (parsed.isValid()) {
 				return parsed;
 			}
