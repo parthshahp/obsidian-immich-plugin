@@ -1,6 +1,7 @@
 import { MarkdownView, Notice } from "obsidian";
 import ImmichDailyCarouselPlugin from "../main";
 import { insertImmichCarousel } from "./insert-immich-carousel";
+import { searchCache, thumbnailCache } from "../utils/cache";
 
 export function registerCommands(plugin: ImmichDailyCarouselPlugin) {
 	plugin.addCommand({
@@ -12,6 +13,18 @@ export function registerCommands(plugin: ImmichDailyCarouselPlugin) {
 				return;
 			}
 			insertImmichCarousel(plugin, editor, view);
+		},
+	});
+
+	plugin.addCommand({
+		id: "clear-immich-cache",
+		name: "Clear Immich cache",
+		callback: () => {
+			const searchCount = searchCache.size;
+			const thumbCount = thumbnailCache.size;
+			searchCache.clear();
+			thumbnailCache.clear();
+			new Notice(`Cleared Immich cache (${searchCount} searches, ${thumbCount} thumbnails).`);
 		},
 	});
 }

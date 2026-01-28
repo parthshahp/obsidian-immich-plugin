@@ -1,6 +1,7 @@
 import { requestUrl } from "obsidian";
 import { ImmichDailySettings } from "../settings";
 import { normalizeBaseUrl } from "../utils/immich";
+import { searchCache, thumbnailCache } from "../utils/cache";
 import { ImmichAsset, ImmichSearchResponse } from "./types";
 
 interface ImmichSearchRequest {
@@ -12,11 +13,25 @@ interface ImmichSearchRequest {
 	order?: "asc" | "desc";
 }
 
+function buildSearchCacheKey(
+	settings: ImmichDailySettings,
+	startIso: string,
+	endIso: string,
+): string {
+	return `${settings.baseUrl}|${startIso}|${endIso}|${settings.maxAssets}|${settings.includeVideos}|${settings.includeArchived}|${settings.sortOrder}`;
+}
+
 export async function searchAssetsForDate(
 	settings: ImmichDailySettings,
 	startIso: string,
 	endIso: string,
-) {
+): Promise<ImmichAsset[]> {
+	const cacheKey = buildSearchCacheKey(settings, startIso, endIso);
+	const cached = searchCache.get(cacheKey);
+	if (cached) {
+		return cached as ImmichAsset[];
+	}
+
 	const baseUrl = normalizeBaseUrl(settings.baseUrl);
 	const url = `${baseUrl}/api/search/metadata`;
 
@@ -43,13 +58,28 @@ export async function searchAssetsForDate(
 	});
 
 	const json = response.json as ImmichSearchResponse;
-	return json.assets?.items ?? json.items ?? [];
+	const assets = json.assets?.items ?? json.items ?? [];
+	searchCache.set(cacheKey, assets);
+	return assets;
+}
+
+function buildThumbnailCacheKey(
+	settings: ImmichDailySettings,
+	assetId: string,
+): string {
+	return `${settings.baseUrl}|${assetId}|${settings.imageSize}`;
 }
 
 export async function fetchAssetThumbnail(
 	settings: ImmichDailySettings,
 	assetId: string,
-) {
+): Promise<Blob> {
+	const cacheKey = buildThumbnailCacheKey(settings, assetId);
+	const cached = thumbnailCache.get(cacheKey);
+	if (cached) {
+		return cached;
+	}
+
 	const baseUrl = normalizeBaseUrl(settings.baseUrl);
 	const url = `${baseUrl}/api/assets/${assetId}/thumbnail?size=${settings.imageSize}`;
 
@@ -62,7 +92,9 @@ export async function fetchAssetThumbnail(
 	});
 
 	const bytes = response.arrayBuffer;
-	return new Blob([bytes]);
+	const blob = new Blob([bytes]);
+	thumbnailCache.set(cacheKey, blob);
+	return blob;
 }
 
 export function isRenderableAsset(asset: ImmichAsset) {
