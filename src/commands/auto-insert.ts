@@ -1,6 +1,6 @@
 import { MarkdownView, TFile } from "obsidian";
 import ImmichDailyCarouselPlugin from "../main";
-import { parseDateFromTitle } from "../utils/date";
+import { parseDateFromDailyNoteFile } from "../utils/date";
 import { hasImmichCredentials } from "../utils/immich";
 
 const CAROUSEL_BLOCK = "```immich-carousel\n```";
@@ -18,8 +18,9 @@ export function registerAutoInsert(plugin: ImmichDailyCarouselPlugin) {
 				return;
 			}
 
-			const date = parseDateFromTitle(
-				file.basename,
+			const date = parseDateFromDailyNoteFile(
+				plugin.app,
+				file,
 				plugin.settings.dateFormat,
 			);
 			if (!date) {
