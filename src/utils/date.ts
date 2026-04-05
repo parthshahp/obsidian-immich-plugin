@@ -86,10 +86,10 @@ export function parseDateFromDailyNoteFile(
 ): ReturnType<typeof moment> | null {
 	const fileFolder = file.parent?.path ?? "";
 
-	// If the user has specified an explicit folder, enforce it directly
+	// If the user has specified a folder, enforce it as a prefix
 	if (folderOverride.trim().length > 0) {
 		const normalized = folderOverride.trim().replace(/\/$/, "");
-		if (fileFolder !== normalized) {
+		if (fileFolder !== normalized && !fileFolder.startsWith(normalized + "/")) {
 			return null;
 		}
 		return parseDateFromTitle(file.basename, fallbackDateFormat);
