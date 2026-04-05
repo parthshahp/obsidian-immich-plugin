@@ -82,16 +82,22 @@ export function parseDateFromDailyNoteFile(
 	app: App,
 	file: TFile,
 	fallbackDateFormat: string,
+	folderOverride = "",
 ): ReturnType<typeof moment> | null {
+	const fileFolder = file.parent?.path ?? "";
+
+	// If the user has specified an explicit folder, enforce it directly
+	if (folderOverride.trim().length > 0) {
+		const normalized = folderOverride.trim().replace(/\/$/, "");
+		if (fileFolder !== normalized) {
+			return null;
+		}
+		return parseDateFromTitle(file.basename, fallbackDateFormat);
+	}
+
 	const dailySettings = getDailyNoteSettings(app);
 
 	if (dailySettings) {
-		// Check the file is in the configured daily notes folder
-		const folder = dailySettings.folder.replace(/\/$/, "");
-		const fileFolder = file.parent?.path ?? "";
-		if (folder.length > 0 && fileFolder !== folder) {
-			return null;
-		}
 
 		// Try configured format first, then fall back to generic patterns.
 		// The folder check above is the real guard; the format is best-effort.

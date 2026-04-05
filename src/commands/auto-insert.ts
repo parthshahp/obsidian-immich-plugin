@@ -22,6 +22,7 @@ export function registerAutoInsert(plugin: ImmichDailyCarouselPlugin) {
 				plugin.app,
 				file,
 				plugin.settings.dateFormat,
+				plugin.settings.dailyNoteFolder,
 			);
 			if (!date) {
 				return;

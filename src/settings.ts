@@ -13,6 +13,7 @@ export interface ImmichDailySettings {
 	dateFormat: string;
 	maxAssets: number;
 	autoInsertDailyNote: boolean;
+	dailyNoteFolder: string;
 	templatePlaceholder: string;
 	thumbnailSizePx: number;
 	includeVideos: boolean;
@@ -30,6 +31,7 @@ export const DEFAULT_SETTINGS: ImmichDailySettings = {
 	dateFormat: "",
 	maxAssets: 30,
 	autoInsertDailyNote: false,
+	dailyNoteFolder: "",
 	templatePlaceholder: "{{immich-carousel}}",
 	thumbnailSizePx: 140,
 	includeVideos: false,
@@ -49,11 +51,13 @@ export class ImmichSettingTab extends PluginSettingTab {
 	display(): void {
 		const { containerEl } = this;
 		containerEl.empty();
-		new Setting(containerEl).setName("Carousel").setHeading();
+
+		// ── Connection ────────────────────────────────────────────────────────
+		new Setting(containerEl).setName("Connection").setHeading();
 
 		new Setting(containerEl)
-			.setName("Immich base URL")
-			.setDesc("Example: https://immich.example.com")
+			.setName("Base URL")
+			.setDesc("Your Immich server address. Example: https://immich.example.com")
 			.addText((text) =>
 				text
 					.setPlaceholder("https://immich.example.com")
@@ -65,8 +69,8 @@ export class ImmichSettingTab extends PluginSettingTab {
 			);
 
 		new Setting(containerEl)
-			.setName("Immich API key")
-			.setDesc("Used to fetch your assets from Immich.")
+			.setName("API key")
+			.setDesc("Used to authenticate requests to your Immich server.")
 			.addText((text) => {
 				text.setPlaceholder("Paste your API key")
 					.setValue(this.plugin.settings.apiKey)
@@ -78,9 +82,9 @@ export class ImmichSettingTab extends PluginSettingTab {
 			});
 
 		new Setting(containerEl)
-			.setName("Immich web base URL (optional)")
+			.setName("Web base URL (optional)")
 			.setDesc(
-				"Defaults to the API base URL if left blank. Used for asset/day links.",
+				"Separate URL for the Immich web UI. Defaults to the base URL if left blank.",
 			)
 			.addText((text) =>
 				text
@@ -92,72 +96,13 @@ export class ImmichSettingTab extends PluginSettingTab {
 					}),
 			);
 
-		new Setting(containerEl)
-			.setName("Asset link template (optional)")
-			.setDesc(
-				"Use {{baseUrl}} and {{assetId}}. Leave blank to use a default Immich pattern.",
-			)
-			.addText((text) =>
-				text
-					.setPlaceholder("{{baseUrl}}/photos/{{assetId}}")
-					.setValue(this.plugin.settings.assetUrlTemplate)
-					.onChange(async (value) => {
-						this.plugin.settings.assetUrlTemplate = value.trim();
-						await this.plugin.saveSettings();
-					}),
-			);
+		// ── Daily Notes ───────────────────────────────────────────────────────
+		new Setting(containerEl).setName("Daily notes").setHeading();
 
 		new Setting(containerEl)
-			.setName("Day link template (optional)")
+			.setName("Auto-insert carousel")
 			.setDesc(
-				"Use {{baseUrl}} and {{date}}. Leave blank to use a default Immich pattern.",
-			)
-			.addText((text) =>
-				text
-					.setPlaceholder("{{baseUrl}}/photos?timelineDate={{date}}")
-					.setValue(this.plugin.settings.dayUrlTemplate)
-					.onChange(async (value) => {
-						this.plugin.settings.dayUrlTemplate = value.trim();
-						await this.plugin.saveSettings();
-					}),
-			);
-
-		new Setting(containerEl)
-			.setName("Title date format (optional)")
-			.setDesc(
-				"Moment-style format used to parse the note title. Leave blank to auto-detect common formats like 2024-01-01.",
-			)
-			.addText((text) =>
-				text
-					.setPlaceholder("2024-01-01")
-					.setValue(this.plugin.settings.dateFormat)
-					.onChange(async (value) => {
-						this.plugin.settings.dateFormat = value.trim();
-						await this.plugin.saveSettings();
-					}),
-			);
-
-		new Setting(containerEl)
-			.setName("Maximum assets per day")
-			.setDesc("Limits how many photos to load for a single carousel.")
-			.addText((text) =>
-				text
-					.setPlaceholder("30")
-					.setValue(String(this.plugin.settings.maxAssets))
-					.onChange(async (value) => {
-						const parsed = Number.parseInt(value, 10);
-						this.plugin.settings.maxAssets =
-							Number.isFinite(parsed) && parsed > 0
-								? parsed
-								: DEFAULT_SETTINGS.maxAssets;
-						await this.plugin.saveSettings();
-					}),
-			);
-
-		new Setting(containerEl)
-			.setName("Auto-insert in daily notes")
-			.setDesc(
-				"When enabled, a new daily note will get an Immich carousel automatically.",
+				"Automatically add an Immich carousel when a daily note is opened.",
 			)
 			.addToggle((toggle) =>
 				toggle
@@ -171,7 +116,7 @@ export class ImmichSettingTab extends PluginSettingTab {
 		new Setting(containerEl)
 			.setName("Template placeholder")
 			.setDesc(
-				"Token to replace in daily note templates. Example: {{immich-carousel}}.",
+				"Token in your daily note template to replace with the carousel block.",
 			)
 			.addText((text) =>
 				text
@@ -186,10 +131,41 @@ export class ImmichSettingTab extends PluginSettingTab {
 			);
 
 		new Setting(containerEl)
-			.setName("Thumbnail size (px)")
+			.setName("Daily notes folder (optional)")
 			.setDesc(
-				"Controls the width and height of carousel images. Recommended range: 80–240.",
+				"Only auto-insert in notes inside this folder. Leave blank to match any note with a date-parseable title.",
 			)
+			.addText((text) =>
+				text
+					.setPlaceholder("Daily notes")
+					.setValue(this.plugin.settings.dailyNoteFolder)
+					.onChange(async (value) => {
+						this.plugin.settings.dailyNoteFolder = value.trim();
+						await this.plugin.saveSettings();
+					}),
+			);
+
+		new Setting(containerEl)
+			.setName("Title date format (optional)")
+			.setDesc(
+				"Moment.js format string for parsing dates from note titles. Leave blank to auto-detect common formats.",
+			)
+			.addText((text) =>
+				text
+					.setPlaceholder("2024-01-01")
+					.setValue(this.plugin.settings.dateFormat)
+					.onChange(async (value) => {
+						this.plugin.settings.dateFormat = value.trim();
+						await this.plugin.saveSettings();
+					}),
+			);
+
+		// ── Carousel ──────────────────────────────────────────────────────────
+		new Setting(containerEl).setName("Carousel").setHeading();
+
+		new Setting(containerEl)
+			.setName("Thumbnail size (px)")
+			.setDesc("Width and height of each image in the carousel. Range: 80–240.")
 			.addText((text) =>
 				text
 					.setPlaceholder("140")
@@ -207,10 +183,53 @@ export class ImmichSettingTab extends PluginSettingTab {
 			);
 
 		new Setting(containerEl)
+			.setName("Image quality")
+			.setDesc("Thumbnail loads faster; preview is higher resolution.")
+			.addDropdown((dropdown) =>
+				dropdown
+					.addOption("thumbnail", "Thumbnail")
+					.addOption("preview", "Preview")
+					.setValue(this.plugin.settings.imageSize)
+					.onChange(async (value) => {
+						this.plugin.settings.imageSize = value as ImmichImageSize;
+						await this.plugin.saveSettings();
+					}),
+			);
+
+		new Setting(containerEl)
+			.setName("Sort order")
+			.setDesc("Ascending shows earliest shots first; descending shows latest first.")
+			.addDropdown((dropdown) =>
+				dropdown
+					.addOption("asc", "Ascending")
+					.addOption("desc", "Descending")
+					.setValue(this.plugin.settings.sortOrder)
+					.onChange(async (value) => {
+						this.plugin.settings.sortOrder = value as ImmichSortOrder;
+						await this.plugin.saveSettings();
+					}),
+			);
+
+		new Setting(containerEl)
+			.setName("Maximum assets per day")
+			.setDesc("Limits how many photos/videos load in a single carousel.")
+			.addText((text) =>
+				text
+					.setPlaceholder("30")
+					.setValue(String(this.plugin.settings.maxAssets))
+					.onChange(async (value) => {
+						const parsed = Number.parseInt(value, 10);
+						this.plugin.settings.maxAssets =
+							Number.isFinite(parsed) && parsed > 0
+								? parsed
+								: DEFAULT_SETTINGS.maxAssets;
+						await this.plugin.saveSettings();
+					}),
+			);
+
+		new Setting(containerEl)
 			.setName("Include videos")
-			.setDesc(
-				"When enabled, videos taken on the day will appear alongside photos.",
-			)
+			.setDesc("Show videos alongside photos in the carousel.")
 			.addToggle((toggle) =>
 				toggle
 					.setValue(this.plugin.settings.includeVideos)
@@ -222,9 +241,7 @@ export class ImmichSettingTab extends PluginSettingTab {
 
 		new Setting(containerEl)
 			.setName("Include archived assets")
-			.setDesc(
-				"When enabled, archived items will be included in the carousel.",
-			)
+			.setDesc("Include archived items in the carousel.")
 			.addToggle((toggle) =>
 				toggle
 					.setValue(this.plugin.settings.includeArchived)
@@ -234,36 +251,35 @@ export class ImmichSettingTab extends PluginSettingTab {
 					}),
 			);
 
+		// ── Links ─────────────────────────────────────────────────────────────
+		new Setting(containerEl).setName("Links").setHeading();
+
 		new Setting(containerEl)
-			.setName("Image size")
-			.setDesc("Choose the thumbnail size to render in the carousel.")
-			.addDropdown((dropdown) =>
-				dropdown
-					.addOption("thumbnail", "Thumbnail")
-					.addOption("preview", "Preview")
-					.setValue(this.plugin.settings.imageSize)
+			.setName("Asset link template (optional)")
+			.setDesc(
+				"URL to open when clicking a photo. Use {{baseUrl}} and {{assetId}}.",
+			)
+			.addText((text) =>
+				text
+					.setPlaceholder("{{baseUrl}}/photos/{{assetId}}")
+					.setValue(this.plugin.settings.assetUrlTemplate)
 					.onChange(async (value) => {
-						this.plugin.settings.imageSize = value as
-							| "thumbnail"
-							| "preview";
+						this.plugin.settings.assetUrlTemplate = value.trim();
 						await this.plugin.saveSettings();
 					}),
 			);
 
 		new Setting(containerEl)
-			.setName("Sort order")
+			.setName("Day link template (optional)")
 			.setDesc(
-				"Ascending puts earlier shots first; descending shows the latest first.",
+				'URL for the "Open in Immich" header link. Use {{baseUrl}} and {{date}}.',
 			)
-			.addDropdown((dropdown) =>
-				dropdown
-					.addOption("asc", "Ascending")
-					.addOption("desc", "Descending")
-					.setValue(this.plugin.settings.sortOrder)
+			.addText((text) =>
+				text
+					.setPlaceholder("{{baseUrl}}/photos?timelineDate={{date}}")
+					.setValue(this.plugin.settings.dayUrlTemplate)
 					.onChange(async (value) => {
-						this.plugin.settings.sortOrder = value as
-							| "asc"
-							| "desc";
+						this.plugin.settings.dayUrlTemplate = value.trim();
 						await this.plugin.saveSettings();
 					}),
 			);
