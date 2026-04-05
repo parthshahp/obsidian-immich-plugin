@@ -1,7 +1,7 @@
 {
 	"id": "obsidian-sample-plugin",
 	"name": "Immich Daily Carousel",
-	"version": "0.5.0",
+	"version": "0.6.0",
 	"minAppVersion": "0.15.0",
 	"description": "Insert Immich photo carousels into daily notes.",
 	"author": "Parth",
